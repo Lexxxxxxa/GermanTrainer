@@ -2,7 +2,6 @@
 using GermanTrainer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using System;
 using System.IO;
 
 namespace GermanTrainer.Data
@@ -18,8 +17,8 @@ namespace GermanTrainer.Data
             if (!optionsBuilder.IsConfigured)
             {
                 var config = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
                     .Build();
 
                 var connectionString = config.GetConnectionString("DefaultConnection");

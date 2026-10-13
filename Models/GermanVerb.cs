@@ -1,13 +1,14 @@
 ﻿namespace GermanTrainer.Models
 {
     /// <summary>
-    /// Глаголы без артиклей - для тренировки переводов
+    /// Verbs without articles - for translation practice
     /// </summary>
     public class GermanVerb
     {
         public int Id { get; set; }
         public int Lesson { get; set; }
         public string Word { get; set; } = string.Empty;
+        public string Level { get; set; } = string.Empty;
         public string Translation { get; set; } = string.Empty;
         public int DifficultyCoefficient { get; set; } = 5;
         public int TimesShown { get; set; } = 0;
@@ -18,7 +19,7 @@
         public bool IsHidden { get; set; } = false;
 
         /// <summary>
-        /// Процент правильных ответов
+        /// Percentage of correct answers
         /// </summary>
         public double SuccessRate
         {

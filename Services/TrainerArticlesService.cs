@@ -1,56 +1,34 @@
-﻿using GermanTrainer.Models;
-using GermanTrainer.Data;
+﻿using GermanTrainer.Data;
+using GermanTrainer.Models;
 
 namespace GermanTrainer.Services
 {
     public class TrainerArticlesService
     {
-        private readonly TrainerDbContext _context;
-
-        public TrainerArticlesService()
-        {
-            _context = new TrainerDbContext();
-        }
+        private static readonly Random Random = new();
 
         public List<GermanNoun> GetAllNouns()
         {
-            return _context.GermanNouns.OrderBy(w => w.Lesson).ThenBy(w => w.Word).ToList();
+            using var context = new TrainerDbContext();
+            return context.GermanNouns.OrderBy(w => w.Lesson).ThenBy(w => w.Word).ToList();
         }
 
         public List<GermanNoun> GetVisibleNouns()
         {
-            var enabledLessons = AppSettings.EnabledLessons;
-            if (enabledLessons.Count == 0)
-            {
-                return _context.GermanNouns.Where(w => !w.IsHidden).ToList();
-            }
+            using var context = new TrainerDbContext();
+            var enabledLessons = AppSettings.EnabledLessons.ToList();
 
-            return _context.GermanNouns
-                .Where(w => !w.IsHidden && enabledLessons.Contains(w.Lesson))
-                .ToList();
+            var query = context.GermanNouns.Where(w => !w.IsHidden);
+            if (enabledLessons.Count > 0)
+                query = query.Where(w => enabledLessons.Contains(w.Lesson));
+
+            return query.ToList();
         }
 
-        // ✓ НОВЫЙ МЕТОД: Получить все существительные (включая скрытые)
-        public List<GermanNoun> GetAllNounsIncludingHidden()
-        {
-            return _context.GermanNouns.OrderBy(w => w.Lesson).ThenBy(w => w.Word).ToList();
-        }
-
-        // ✓ НОВЫЙ МЕТОД: Получить существительное по ID
         public GermanNoun? GetNounById(int id)
         {
-            return _context.GermanNouns.FirstOrDefault(w => w.Id == id);
-        }
-
-        // ✓ НОВЫЙ МЕТОД: Переключить видимость существительного
-        public void ToggleNounVisibility(int nounId)
-        {
-            var noun = _context.GermanNouns.FirstOrDefault(w => w.Id == nounId);
-            if (noun != null)
-            {
-                noun.IsHidden = !noun.IsHidden;
-                _context.SaveChanges();
-            }
+            using var context = new TrainerDbContext();
+            return context.GermanNouns.FirstOrDefault(w => w.Id == id);
         }
 
         public GermanNoun? GetNextNoun()
@@ -58,58 +36,48 @@ namespace GermanTrainer.Services
             var words = GetVisibleNouns();
             if (words.Count == 0) return null;
 
-            var totalWeight = words.Sum(w => CalculateWordWeight(w));
-            if (totalWeight == 0) return words.OrderBy(x => Guid.NewGuid()).FirstOrDefault();
+            var totalWeight = words.Sum(CalculateWordWeight);
+            if (totalWeight <= 0) return words[Random.Next(words.Count)];
 
-            var random = new Random();
-            var randomValue = random.NextDouble() * totalWeight;
+            var randomValue = Random.NextDouble() * totalWeight;
             double currentValue = 0;
 
             foreach (var word in words)
             {
                 currentValue += CalculateWordWeight(word);
                 if (randomValue <= currentValue)
-                {
                     return word;
-                }
             }
 
-            return words.Last();
+            return words[^1];
         }
 
-        private double CalculateWordWeight<T>(T word) where T : class
+        private static double CalculateWordWeight(GermanNoun word)
         {
-            dynamic w = word;
-            if (w.TimesShown == 0) return 1.0;
+            if (word.TimesShown == 0) return 1.0;
 
-            var errorRate = (double)w.WrongAnswers / w.TimesShown;
-            var difficultyFactor = w.DifficultyCoefficient / 10.0;
+            var errorRate = (double)word.WrongAnswers / word.TimesShown;
+            var difficultyFactor = word.DifficultyCoefficient / 10.0;
             return (errorRate + 1) * (difficultyFactor + 0.5);
         }
 
         public void RecordAnswer(GermanNoun noun, bool isCorrect)
         {
-            var dbNoun = _context.GermanNouns.FirstOrDefault(w => w.Id == noun.Id);
-            if (dbNoun != null)
-            {
-                dbNoun.TimesShown++;
-                if (isCorrect)
-                {
-                    dbNoun.CorrectAnswers++;
-                }
-                else
-                {
-                    dbNoun.WrongAnswers++;
-                }
+            using var context = new TrainerDbContext();
+            var dbNoun = context.GermanNouns.FirstOrDefault(w => w.Id == noun.Id);
+            if (dbNoun == null) return;
 
-                if (dbNoun.DifficultyCoefficient < 10)
-                {
-                    dbNoun.DifficultyCoefficient++;
-                }
+            dbNoun.TimesShown++;
+            if (isCorrect)
+                dbNoun.CorrectAnswers++;
+            else
+                dbNoun.WrongAnswers++;
 
-                dbNoun.LastShownAt = DateTime.Now;
-                _context.SaveChanges();
-            }
+            if (dbNoun.DifficultyCoefficient < 10)
+                dbNoun.DifficultyCoefficient++;
+
+            dbNoun.LastShownAt = DateTime.Now;
+            context.SaveChanges();
         }
 
         public void AddNoun(string word, string article, string? translation = null, string? pluralForm = null, int lesson = 1)
@@ -117,81 +85,79 @@ namespace GermanTrainer.Services
             if (!IsValidArticle(article))
                 throw new ArgumentException("Артикль должен быть: der, die или das");
 
-            var newNoun = new GermanNoun
+            using var context = new TrainerDbContext();
+            context.GermanNouns.Add(new GermanNoun
             {
                 Word = word.Trim(),
-                Article = article.ToLower(),
+                Article = article.ToLowerInvariant(),
                 Translation = translation ?? string.Empty,
                 PluralForm = pluralForm,
                 Lesson = lesson,
                 DifficultyCoefficient = 5,
                 CreatedAt = DateTime.Now,
                 IsHidden = false
-            };
-
-            _context.GermanNouns.Add(newNoun);
-            _context.SaveChanges();
+            });
+            context.SaveChanges();
         }
 
         public void RemoveNoun(int nounId)
         {
-            var noun = _context.GermanNouns.FirstOrDefault(w => w.Id == nounId);
-            if (noun != null)
-            {
-                _context.GermanNouns.Remove(noun);
-                _context.SaveChanges();
-            }
+            using var context = new TrainerDbContext();
+            var noun = context.GermanNouns.FirstOrDefault(w => w.Id == nounId);
+            if (noun == null) return;
+
+            context.GermanNouns.Remove(noun);
+            context.SaveChanges();
+        }
+
+        public void ToggleNounVisibility(int nounId)
+        {
+            using var context = new TrainerDbContext();
+            var noun = context.GermanNouns.FirstOrDefault(w => w.Id == nounId);
+            if (noun == null) return;
+
+            noun.IsHidden = !noun.IsHidden;
+            context.SaveChanges();
         }
 
         public void ToggleNounVisibility(int nounId, bool isHidden)
         {
-            var noun = _context.GermanNouns.FirstOrDefault(w => w.Id == nounId);
-            if (noun != null)
-            {
-                noun.IsHidden = isHidden;
-                _context.SaveChanges();
-            }
+            using var context = new TrainerDbContext();
+            var noun = context.GermanNouns.FirstOrDefault(w => w.Id == nounId);
+            if (noun == null) return;
+
+            noun.IsHidden = isHidden;
+            context.SaveChanges();
         }
 
         public (int totalNouns, int correctTotal, int wrongTotal, double averageSuccessRate) GetNounStatistics()
         {
-            var nouns = _context.GermanNouns.ToList();
+            using var context = new TrainerDbContext();
+            var nouns = context.GermanNouns.ToList();
             if (nouns.Count == 0)
                 return (0, 0, 0, 0);
 
-            var correctTotal = nouns.Sum(w => w.CorrectAnswers);
-            var wrongTotal = nouns.Sum(w => w.WrongAnswers);
-            var averageSuccessRate = nouns.Average(w => w.SuccessRate);
-
-            return (nouns.Count, correctTotal, wrongTotal, averageSuccessRate);
+            return (nouns.Count,
+                    nouns.Sum(w => w.CorrectAnswers),
+                    nouns.Sum(w => w.WrongAnswers),
+                    nouns.Average(w => w.SuccessRate));
         }
 
         public void ResetNounStatistics(int nounId)
         {
-            var noun = _context.GermanNouns.FirstOrDefault(w => w.Id == nounId);
-            if (noun != null)
-            {
-                noun.TimesShown = 0;
-                noun.CorrectAnswers = 0;
-                noun.WrongAnswers = 0;
-                noun.DifficultyCoefficient = 5;
-                noun.LastShownAt = null;
-                _context.SaveChanges();
-            }
+            using var context = new TrainerDbContext();
+            var noun = context.GermanNouns.FirstOrDefault(w => w.Id == nounId);
+            if (noun == null) return;
+
+            noun.TimesShown = 0;
+            noun.CorrectAnswers = 0;
+            noun.WrongAnswers = 0;
+            noun.DifficultyCoefficient = 5;
+            noun.LastShownAt = null;
+            context.SaveChanges();
         }
 
-        private bool IsValidArticle(string article)
-        {
-            return article?.ToLower() switch
-            {
-                "der" or "die" or "das" => true,
-                _ => false
-            };
-        }
-
-        public void Dispose()
-        {
-            _context?.Dispose();
-        }
+        private static bool IsValidArticle(string? article) =>
+            article?.ToLowerInvariant() is "der" or "die" or "das";
     }
 }

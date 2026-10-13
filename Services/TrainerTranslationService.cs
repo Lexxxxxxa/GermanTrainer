@@ -1,123 +1,45 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using GermanTrainer.Data;
+﻿using GermanTrainer.Data;
 using GermanTrainer.Models;
 
 namespace GermanTrainer.Services
 {
     public class TrainerTranslationService
     {
-        private readonly TrainerDbContext _context;
-        private List<GermanNoun> _nouns;
-        private List<GermanAdjective> _adjectives;
-        private List<GermanVerb> _verbs;
-        private List<object> _allWords;
+        private static readonly Random Random = new();
+
+        private List<GermanNoun> _nouns = new();
+        private List<GermanAdjective> _adjectives = new();
+        private List<GermanVerb> _verbs = new();
+        private List<object> _allWords = new();
 
         public TrainerTranslationService()
         {
-            _context = new TrainerDbContext();
-            _nouns = new List<GermanNoun>();
-            _adjectives = new List<GermanAdjective>();
-            _verbs = new List<GermanVerb>();
-            _allWords = new List<object>();
             LoadWords();
         }
 
         public object? GetNextWord()
         {
-            if (_allWords == null || _allWords.Count == 0)
+            if (_allWords.Count == 0)
                 return null;
 
-            var random = new Random();
-            return _allWords[random.Next(_allWords.Count)];
-        }
-
-        // ✓ НОВЫЙ МЕТОД: Получить все существительные
-        public List<GermanNoun> GetAllNouns()
-        {
-            return _context.GermanNouns.OrderBy(w => w.Lesson).ThenBy(w => w.Word).ToList();
-        }
-
-        // ✓ НОВЫЙ МЕТОД: Получить все прилагательные
-        public List<GermanAdjective> GetAllAdjectives()
-        {
-            return _context.GermanAdjectives.OrderBy(w => w.Lesson).ThenBy(w => w.Word).ToList();
-        }
-
-        // ✓ НОВЫЙ МЕТОД: Получить все глаголы
-        public List<GermanVerb> GetAllVerbs()
-        {
-            return _context.GermanVerbs.OrderBy(w => w.Lesson).ThenBy(w => w.Word).ToList();
-        }
-
-        // ✓ НОВЫЙ МЕТОД: Переключить видимость существительного
-        public void ToggleNounVisibility(int nounId)
-        {
-            var noun = _context.GermanNouns.FirstOrDefault(w => w.Id == nounId);
-            if (noun != null)
-            {
-                noun.IsHidden = !noun.IsHidden;
-                _context.SaveChanges();
-            }
-        }
-
-        // ✓ НОВЫЙ МЕТОД: Переключить видимость прилагательного
-        public void ToggleAdjectiveVisibility(int adjectiveId)
-        {
-            var adj = _context.GermanAdjectives.FirstOrDefault(w => w.Id == adjectiveId);
-            if (adj != null)
-            {
-                adj.IsHidden = !adj.IsHidden;
-                _context.SaveChanges();
-            }
-        }
-
-        // ✓ НОВЫЙ МЕТОД: Переключить видимость глагола
-        public void ToggleVerbVisibility(int verbId)
-        {
-            var verb = _context.GermanVerbs.FirstOrDefault(w => w.Id == verbId);
-            if (verb != null)
-            {
-                verb.IsHidden = !verb.IsHidden;
-                _context.SaveChanges();
-            }
+            return _allWords[Random.Next(_allWords.Count)];
         }
 
         public List<string> GenerateWrongAnswers(string correctAnswer, int count)
         {
-            var random = new Random();
-            var wrongAnswers = new List<string>();
+            var distinct = _nouns.Select(n => n.Translation)
+                .Concat(_adjectives.Select(a => a.Translation))
+                .Concat(_verbs.Select(v => v.Translation))
+                .Where(t => !string.IsNullOrEmpty(t) && t != correctAnswer)
+                .Distinct()
+                .ToList();
 
-            // Собираем все переводы (исключая правильный)
-            var allTranslations = new List<string>();
-            allTranslations.AddRange(_nouns.Select(n => n.Translation).Where(t => t != null && t != correctAnswer)!);
-            allTranslations.AddRange(_adjectives.Select(a => a.Translation).Where(t => t != null && t != correctAnswer)!);
-            allTranslations.AddRange(_verbs.Select(v => v.Translation).Where(t => t != null && t != correctAnswer)!);
+            var wrongAnswers = distinct.Count >= count
+                ? distinct.OrderBy(_ => Random.Next()).Take(count).ToList()
+                : distinct;
 
-            // Выбираем случайные уникальные варианты
-            var distinct = allTranslations.Distinct().ToList();
-            if (distinct.Count >= count)
-            {
-                wrongAnswers = distinct.OrderBy(x => random.Next()).Take(count).ToList();
-            }
-            else if (distinct.Count > 0)
-            {
-                wrongAnswers = distinct;
-                // Добавляем заглушки если не хватает
-                while (wrongAnswers.Count < count)
-                {
-                    wrongAnswers.Add($"вариант {wrongAnswers.Count + 1}");
-                }
-            }
-            else
-            {
-                // На случай если в БД мало слов
-                for (int i = 1; i <= count; i++)
-                {
-                    wrongAnswers.Add($"вариант {i}");
-                }
-            }
+            while (wrongAnswers.Count < count)
+                wrongAnswers.Add($"вариант {wrongAnswers.Count + 1}");
 
             return wrongAnswers;
         }
@@ -126,23 +48,41 @@ namespace GermanTrainer.Services
         {
             if (word == null) return;
 
-            if (word is GermanNoun noun)
+            using var context = new TrainerDbContext();
+
+            switch (word)
             {
-                if (isCorrect) noun.CorrectAnswers++; else noun.WrongAnswers++;
-            }
-            else if (word is GermanAdjective adj)
-            {
-                if (isCorrect) adj.CorrectAnswers++; else adj.WrongAnswers++;
-            }
-            else if (word is GermanVerb verb)
-            {
-                if (isCorrect) verb.CorrectAnswers++; else verb.WrongAnswers++;
+                case GermanNoun noun:
+                    var dbNoun = context.GermanNouns.FirstOrDefault(w => w.Id == noun.Id);
+                    if (dbNoun == null) return;
+                    if (isCorrect) dbNoun.CorrectAnswers++; else dbNoun.WrongAnswers++;
+                    noun.CorrectAnswers = dbNoun.CorrectAnswers;
+                    noun.WrongAnswers = dbNoun.WrongAnswers;
+                    break;
+
+                case GermanAdjective adj:
+                    var dbAdj = context.GermanAdjectives.FirstOrDefault(w => w.Id == adj.Id);
+                    if (dbAdj == null) return;
+                    if (isCorrect) dbAdj.CorrectAnswers++; else dbAdj.WrongAnswers++;
+                    adj.CorrectAnswers = dbAdj.CorrectAnswers;
+                    adj.WrongAnswers = dbAdj.WrongAnswers;
+                    break;
+
+                case GermanVerb verb:
+                    var dbVerb = context.GermanVerbs.FirstOrDefault(w => w.Id == verb.Id);
+                    if (dbVerb == null) return;
+                    if (isCorrect) dbVerb.CorrectAnswers++; else dbVerb.WrongAnswers++;
+                    verb.CorrectAnswers = dbVerb.CorrectAnswers;
+                    verb.WrongAnswers = dbVerb.WrongAnswers;
+                    break;
+
+                default:
+                    return;
             }
 
-            _context.SaveChanges();
+            context.SaveChanges();
         }
 
-        // ✓ НОВЫЙ МЕТОД: ПЕРЕЗАГРУЗИТЬ СЛОВА ПОСЛЕ ИЗМЕНЕНИЯ НАСТРОЕК
         public void ReloadWords()
         {
             LoadWords();
@@ -150,51 +90,32 @@ namespace GermanTrainer.Services
 
         private void LoadWords()
         {
-            _nouns = new List<GermanNoun>();
-            _adjectives = new List<GermanAdjective>();
-            _verbs = new List<GermanVerb>();
+            using var context = new TrainerDbContext();
+            var lessons = AppSettings.EnabledLessons.ToList();
+            bool filterLessons = lessons.Count > 0;
+
+            _nouns = AppSettings.IsWordTypeEnabled(WordType.Noun)
+                ? context.GermanNouns
+                    .Where(w => !w.IsHidden && (!filterLessons || lessons.Contains(w.Lesson)))
+                    .ToList()
+                : new List<GermanNoun>();
+
+            _adjectives = AppSettings.IsWordTypeEnabled(WordType.Adjective)
+                ? context.GermanAdjectives
+                    .Where(w => !w.IsHidden && (!filterLessons || lessons.Contains(w.Lesson)))
+                    .ToList()
+                : new List<GermanAdjective>();
+
+            _verbs = AppSettings.IsWordTypeEnabled(WordType.Verb)
+                ? context.GermanVerbs
+                    .Where(w => !w.IsHidden && (!filterLessons || lessons.Contains(w.Lesson)))
+                    .ToList()
+                : new List<GermanVerb>();
+
             _allWords = new List<object>();
-
-            // ✓ ПРОВЕРЯЕМ, КАКИЕ ТИПЫ СЛОВ ВКЛЮЧЕНЫ
-            bool includeNouns = AppSettings.EnabledWordTypes.Count == 0 || AppSettings.EnabledWordTypes.Contains("Noun");
-            bool includeAdjectives = AppSettings.EnabledWordTypes.Count == 0 || AppSettings.EnabledWordTypes.Contains("Adjective");
-            bool includeVerbs = AppSettings.EnabledWordTypes.Count == 0 || AppSettings.EnabledWordTypes.Contains("Verb");
-
-            // ✓ ЗАГРУЖАЕМ СУЩЕСТВИТЕЛЬНЫЕ
-            if (includeNouns)
-            {
-                _nouns = _context.GermanNouns.Where(w => !w.IsHidden).ToList();
-                if (AppSettings.EnabledLessons.Any())
-                {
-                    _nouns = _nouns.Where(w => AppSettings.EnabledLessons.Contains(w.Lesson)).ToList();
-                }
-
-                _allWords.AddRange(_nouns.Cast<object>());
-            }
-
-            // ✓ ЗАГРУЖАЕМ ПРИЛАГАТЕЛЬНЫЕ
-            if (includeAdjectives)
-            {
-                _adjectives = _context.GermanAdjectives.Where(w => !w.IsHidden).ToList();
-                if (AppSettings.EnabledLessons.Any())
-                {
-                    _adjectives = _adjectives.Where(w => AppSettings.EnabledLessons.Contains(w.Lesson)).ToList();
-                }
-
-                _allWords.AddRange(_adjectives.Cast<object>());
-            }
-
-            // ✓ ЗАГРУЖАЕМ ГЛАГОЛЫ
-            if (includeVerbs)
-            {
-                _verbs = _context.GermanVerbs.Where(w => !w.IsHidden).ToList();
-                if (AppSettings.EnabledLessons.Any())
-                {
-                    _verbs = _verbs.Where(w => AppSettings.EnabledLessons.Contains(w.Lesson)).ToList();
-                }
-
-                _allWords.AddRange(_verbs.Cast<object>());
-            }
+            _allWords.AddRange(_nouns);
+            _allWords.AddRange(_adjectives);
+            _allWords.AddRange(_verbs);
         }
     }
 }

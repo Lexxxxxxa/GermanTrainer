@@ -1,0 +1,13 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- Light Theme -->
+    <sys:Boolean x:Key="IsThemeDictionary">True</sys:Boolean>
+
+    <SolidColorBrush x:Key="BackgroundBrush" Color="#FCFCF9"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFD"/>
+    <SolidColorBrush x:Key="TextBrush" Color="#13343B"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#626C71"/>
+    <SolidColorBrush x:Key="BorderLineBrush" Color="#335E5240"/>
+</ResourceDictionary>

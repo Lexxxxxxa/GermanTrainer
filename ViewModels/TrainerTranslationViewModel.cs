@@ -1,39 +1,52 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using GermanTrainer.Data;
+﻿using System.Collections.ObjectModel;
+using System.Windows.Input;
 using GermanTrainer.Models;
 using GermanTrainer.Services;
+using GermanTrainer.ViewModels.Base;
 
 namespace GermanTrainer.ViewModels
 {
-    public class TrainerTranslationViewModel : INotifyPropertyChanged
+    public class TrainerTranslationViewModel : ViewModelBase, ITrainerViewModel
     {
+        private const int WrongAnswersCount = 3;
+
         private readonly TrainerTranslationService _service;
+        private readonly WordsService _wordsService;
+        private readonly IDialogService _dialogService;
+
         private object? _currentWord;
-        private string? _selectedAnswer;
+        private AnswerOptionViewModel? _selectedAnswer;
+        private string? _correctAnswer;
         private string? _feedback;
         private bool _isAnswered;
         private int _correctCount;
         private int _wrongCount;
-        private List<string> _answerOptions;
-        private string? _correctAnswer;
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        public TrainerTranslationViewModel()
+        public TrainerTranslationViewModel(TrainerTranslationService service, WordsService wordsService, IDialogService dialogService)
         {
-            _service = new TrainerTranslationService();
-            _answerOptions = new List<string>();
+            _service = service;
+            _wordsService = wordsService;
+            _dialogService = dialogService;
+
+            SelectAnswerCommand = new RelayCommand<AnswerOptionViewModel>(SelectAnswer, _ => !IsAnswered);
+            CheckOrNextCommand = new RelayCommand(CheckOrNext, () => IsAnswered || SelectedAnswer != null);
+            ManageWordsCommand = new RelayCommand(OpenWordsManagement);
+
             LoadNextQuestion();
         }
+
+        #region Свойства
+
+        public ObservableCollection<AnswerOptionViewModel> AnswerOptions { get; } = new();
 
         public object? CurrentWord
         {
             get => _currentWord;
-            set { _currentWord = value; OnPropertyChanged(); OnPropertyChanged(nameof(CurrentWordDisplay)); }
+            private set
+            {
+                if (SetProperty(ref _currentWord, value))
+                    OnPropertyChanged(nameof(CurrentWordDisplay));
+            }
         }
 
         public string CurrentWordDisplay => CurrentWord switch
@@ -44,42 +57,63 @@ namespace GermanTrainer.ViewModels
             _ => "Загрузка..."
         };
 
-        public string? SelectedAnswer
+        public AnswerOptionViewModel? SelectedAnswer
         {
             get => _selectedAnswer;
-            set { _selectedAnswer = value; OnPropertyChanged(); }
+            private set
+            {
+                if (SetProperty(ref _selectedAnswer, value))
+                {
+                    foreach (var option in AnswerOptions)
+                        option.IsSelected = ReferenceEquals(option, value);
+                }
+            }
         }
 
         public string? Feedback
         {
             get => _feedback;
-            set { _feedback = value; OnPropertyChanged(); }
+            private set => SetProperty(ref _feedback, value);
         }
 
         public bool IsAnswered
         {
             get => _isAnswered;
-            set { _isAnswered = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanAnswer)); }
+            private set
+            {
+                if (SetProperty(ref _isAnswered, value))
+                {
+                    OnPropertyChanged(nameof(CanAnswer));
+                    OnPropertyChanged(nameof(ActionButtonText));
+                    OnPropertyChanged(nameof(ActionButtonToolTip));
+                }
+            }
         }
 
         public bool CanAnswer => !IsAnswered;
 
+        public string ActionButtonText => IsAnswered ? "→ Дальше" : "✓ Проверить";
+
+        public string ActionButtonToolTip => IsAnswered ? "Показать следующее слово" : "Проверить ответ";
+
         public int CorrectCount
         {
             get => _correctCount;
-            set { _correctCount = value; OnPropertyChanged(); OnPropertyChanged(nameof(SuccessPercentage)); }
+            private set
+            {
+                if (SetProperty(ref _correctCount, value))
+                    OnPropertyChanged(nameof(SuccessPercentage));
+            }
         }
 
         public int WrongCount
         {
             get => _wrongCount;
-            set { _wrongCount = value; OnPropertyChanged(); OnPropertyChanged(nameof(SuccessPercentage)); }
-        }
-
-        public List<string> AnswerOptions
-        {
-            get => _answerOptions;
-            set { _answerOptions = value; OnPropertyChanged(); }
+            private set
+            {
+                if (SetProperty(ref _wrongCount, value))
+                    OnPropertyChanged(nameof(SuccessPercentage));
+            }
         }
 
         public string SuccessPercentage
@@ -92,12 +126,20 @@ namespace GermanTrainer.ViewModels
             }
         }
 
-        public void SelectAnswer(string answer)
+        #endregion
+
+        #region Команды
+
+        public ICommand SelectAnswerCommand { get; }
+        public ICommand CheckOrNextCommand { get; }
+        public ICommand ManageWordsCommand { get; }
+
+        #endregion
+
+        public void SelectAnswer(AnswerOptionViewModel? answer)
         {
-            if (!IsAnswered)
-            {
+            if (!IsAnswered && answer != null)
                 SelectedAnswer = answer;
-            }
         }
 
         public void CheckAnswer()
@@ -106,7 +148,7 @@ namespace GermanTrainer.ViewModels
                 return;
 
             IsAnswered = true;
-            bool isCorrect = SelectedAnswer == _correctAnswer;
+            bool isCorrect = SelectedAnswer.Text == _correctAnswer;
 
             if (isCorrect)
             {
@@ -122,44 +164,54 @@ namespace GermanTrainer.ViewModels
             _service.RecordAnswer(CurrentWord, isCorrect);
         }
 
-        public void NextQuestion()
-        {
-            LoadNextQuestion();
-        }
+        public void NextQuestion() => LoadNextQuestion();
 
         public void ResetQuiz()
         {
             CorrectCount = 0;
             WrongCount = 0;
-            SelectedAnswer = null;
-            Feedback = null;
-            IsAnswered = false;
             LoadNextQuestion();
         }
 
-        // ✓ ОБНОВЛЕННЫЙ МЕТОД: ТЕПЕРЬ ПЕРЕЗАГРУЖАЕТ СЛОВА С НОВЫМИ НАСТРОЙКАМИ
-        public void RefreshWords()
+        public void Refresh()
         {
             _service.ReloadWords();
             LoadNextQuestion();
+        }
+
+        public void OpenWordsManagement()
+        {
+            var viewModel = new WordsManagementViewModel(WordsManagementMode.Translation, _wordsService, Refresh);
+            _dialogService.ShowWordsManagement(viewModel);
+        }
+
+        private void CheckOrNext()
+        {
+            if (IsAnswered)
+                NextQuestion();
+            else
+                CheckAnswer();
         }
 
         private void LoadNextQuestion()
         {
             CurrentWord = _service.GetNextWord();
             _correctAnswer = GetTranslation(CurrentWord);
-            AnswerOptions = GenerateAnswerOptions(_correctAnswer);
-            SelectedAnswer = null;
-            Feedback = null;
-            IsAnswered = false;
 
-            if (CurrentWord == null)
-            {
-                Feedback = "Нет доступных слов для тренировки! Выберите уроки и типы слов в настройках.";
-            }
+            SelectedAnswer = null;
+            AnswerOptions.Clear();
+            foreach (var option in GenerateAnswerOptions(_correctAnswer))
+                AnswerOptions.Add(new AnswerOptionViewModel(option));
+
+            IsAnswered = false;
+            Feedback = CurrentWord == null
+                ? "Нет доступных слов для тренировки! Выберите уроки и типы слов в настройках."
+                : null;
+
+            CommandManager.InvalidateRequerySuggested();
         }
 
-        private string? GetTranslation(object? word) => word switch
+        private static string? GetTranslation(object? word) => word switch
         {
             GermanNoun n => n.Translation,
             GermanAdjective a => a.Translation,
@@ -173,17 +225,10 @@ namespace GermanTrainer.ViewModels
                 return new List<string>();
 
             var options = new List<string> { correctAnswer };
-            var wrongAnswers = _service.GenerateWrongAnswers(correctAnswer, 3);
-            options.AddRange(wrongAnswers);
+            options.AddRange(_service.GenerateWrongAnswers(correctAnswer, WrongAnswersCount));
 
-            // Перемешиваем
             var random = new Random();
-            return options.OrderBy(x => random.Next()).ToList();
-        }
-
-        protected void OnPropertyChanged([CallerMemberName] string? name = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            return options.OrderBy(_ => random.Next()).ToList();
         }
     }
 }

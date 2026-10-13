@@ -1,13 +1,14 @@
 ﻿namespace GermanTrainer.Models
 {
     /// <summary>
-    /// Существительные с артиклями - для тренировки артиклей
+    /// Nouns with articles – for practising articles
     /// </summary>
     public class GermanNoun
     {
         public int Id { get; set; }
         public int Lesson { get; set; }
         public string Word { get; set; } = string.Empty;
+        public string Level { get; set; } = string.Empty;
         public string Article { get; set; } = string.Empty;
         public string? PluralForm { get; set; }
         public string Translation { get; set; } = string.Empty;
@@ -17,10 +18,10 @@
         public int WrongAnswers { get; set; } = 0;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? LastShownAt { get; set; }
-        public bool IsHidden { get; set; } = false; 
+        public bool IsHidden { get; set; } = false;
 
         /// <summary>
-        /// Процент правильных ответов
+        /// Percentage of correct answers
         /// </summary>
         public double SuccessRate
         {

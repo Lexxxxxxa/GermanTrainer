@@ -1,0 +1,26 @@
+﻿<UserControl x:Class="GermanTrainer.Views.SessionStatsBar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border Style="{StaticResource HeaderBorder}">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <Border Style="{StaticResource Badge}" Background="{StaticResource CorrectBrush}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="✓ " Style="{StaticResource BadgeText}"/>
+                    <TextBlock Text="{Binding CorrectCount}" Style="{StaticResource BadgeText}"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Badge}" Background="{StaticResource WrongBrush}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="✗ " Style="{StaticResource BadgeText}"/>
+                    <TextBlock Text="{Binding WrongCount}" Style="{StaticResource BadgeText}"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Badge}" Background="{StaticResource PercentBrush}" Margin="0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="📊 " FontSize="18"/>
+                    <TextBlock Text="{Binding SuccessPercentage}" Style="{StaticResource BadgeText}"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Border>
+</UserControl>

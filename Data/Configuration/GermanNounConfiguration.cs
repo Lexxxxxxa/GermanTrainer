@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using GermanTrainer.Models;
-using System;
 
 namespace GermanTrainer.Data.Configuration
 {
@@ -14,15 +13,24 @@ namespace GermanTrainer.Data.Configuration
             builder.Property(x => x.Article).IsRequired().HasMaxLength(10);
             builder.Property(x => x.Translation).IsRequired().HasMaxLength(200);
             builder.Property(x => x.PluralForm).HasMaxLength(50);
-
-            builder.HasIndex(x => x.Word).IsUnique();
+            builder.Property(x => x.Level).IsRequired().HasMaxLength(3);
 
             builder.HasData(GetGermanNounBatch1());
             builder.HasData(GetGermanNounBatch2());
             builder.HasData(GetGermanNounBatch3());
             builder.HasData(GetGermanNounBatch4());
             builder.HasData(GetGermanNounBatch5());
+            builder.HasData(GetGermanNounBatch6());
+            builder.HasData(GetGermanNounBatch7());
             builder.HasData(GetGermanNounBatch8());
+            builder.HasData(GetGermanNounBatch9());
+            builder.HasData(GetGermanNounBatch10());
+            builder.HasData(GetGermanNounBatch11());
+            builder.HasData(GetGermanNounBatch12());
+            builder.HasData(GetGermanNounBatch13());
+            builder.HasData(GetGermanNounBatch14());
+            builder.HasData(GetGermanNounBatch15());
+
         }
     }
 }
