@@ -1,0 +1,66 @@
+<UserControl x:Class="GermanTrainer.Views.TranslationTrainerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:GermanTrainer.Views">
+    <!-- DataContext: TrainerTranslationViewModel -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <views:SessionStatsBar Grid.Row="0"/>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Border Style="{StaticResource SurfaceCard}" Margin="40,20" MaxWidth="1100">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
+                        <TextBlock Text="{Binding DirectionText}" Foreground="{DynamicResource TextBrush}"
+                                   FontSize="18" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                        <Button Content="{Binding SwitchDirectionText}" Command="{Binding SwitchDirectionCommand}"
+                                Style="{StaticResource SmallColoredButton}" Background="{StaticResource AccentBrush}"
+                                FontSize="14" Padding="12,8"/>
+                    </StackPanel>
+                    <TextBlock Text="💬 Режим переводов" FontSize="24" FontWeight="Bold"
+                               Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" Margin="0,0,0,40"/>
+
+                    <TextBlock Text="{Binding CurrentWordDisplay}" FontSize="64" FontWeight="Bold"
+                               Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,60"/>
+
+                    <!-- Answer options 2x2 -->
+                    <ItemsControl ItemsSource="{Binding AnswerOptions}" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="2"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource AnswerOptionButton}"
+                                        Command="{Binding DataContext.SelectAnswerCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}">
+                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" TextAlignment="Center"/>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Text="{Binding Feedback}" FontSize="18" FontWeight="Medium"
+                               Foreground="{DynamicResource TextBrush}" TextWrapping="Wrap" TextAlignment="Center"
+                               HorizontalAlignment="Center" MinHeight="30" Margin="0,50,0,0"/>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
+        <!-- Check/Next -->
+        <Button Grid.Row="2"
+                Content="{Binding ActionButtonText}"
+                ToolTip="{Binding ActionButtonToolTip}"
+                Command="{Binding CheckOrNextCommand}"
+                Style="{StaticResource PrimaryActionButton}"
+                Background="{StaticResource PercentBrush}"
+                HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,30"/>
+    </Grid>
+</UserControl>
