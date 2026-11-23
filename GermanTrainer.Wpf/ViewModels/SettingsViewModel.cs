@@ -3,7 +3,6 @@ using GermanTrainer.Services;
 using GermanTrainer.ViewModels.Base;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-using System.Xml.Linq;
 
 namespace GermanTrainer.ViewModels
 {

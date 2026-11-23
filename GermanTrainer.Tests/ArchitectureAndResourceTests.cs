@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using Xunit;
 
 namespace GermanTrainer.Tests;
 
@@ -17,7 +16,8 @@ public sealed class ArchitectureAndResourceTests
         throw new InvalidOperationException("Run source validation tests from the repository checkout.");
     }
 
-    [Fact] public void CoreHasNoWpfDatabaseOrExternalPackageReferences()
+    [Fact]
+    public void CoreHasNoWpfDatabaseOrExternalPackageReferences()
     {
         var project = XDocument.Load(Path.Combine(Root(), "GermanTrainer.Core", "GermanTrainer.Core.csproj"));
         Assert.Empty(project.Descendants("PackageReference"));

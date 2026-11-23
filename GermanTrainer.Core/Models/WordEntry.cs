@@ -1,4 +1,4 @@
-﻿namespace GermanTrainer.Models
+namespace GermanTrainer.Models
 {
     public record WordEntry(
         int Id,

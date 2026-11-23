@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text.Json;
 using GermanTrainer.Models;
 
@@ -67,25 +67,24 @@ namespace GermanTrainer
 
         public static void SaveSettings()
         {
-                var directory = Path.GetDirectoryName(SettingsPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+            var directory = Path.GetDirectoryName(SettingsPath);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
 
-                var settings = new
-                {
-                    EnabledLessons,
-                    EnabledWordTypes
-                };
+            var settings = new
+            {
+                EnabledLessons,
+                EnabledWordTypes
+            };
 
-                var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
-                var temp = SettingsPath + ".tmp";
-                try
-                {
-                    File.WriteAllText(temp, json);
-                    File.Move(temp, SettingsPath, overwrite: true);
-                }
-                finally { if (File.Exists(temp)) File.Delete(temp); }
-                // Let the UI report failed writes; never announce a silent false success.
+            var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+            var temp = SettingsPath + ".tmp";
+            try
+            {
+                File.WriteAllText(temp, json);
+                File.Move(temp, SettingsPath, overwrite: true);
+            }
+            finally { if (File.Exists(temp)) File.Delete(temp); }
         }
     }
 }

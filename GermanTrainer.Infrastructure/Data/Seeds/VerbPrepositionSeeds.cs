@@ -39,8 +39,11 @@ public static class VerbPrepositionSeeds
                 p.Preposition == entry.Prep && p.Case == entry.Case && p.Meaning == entry.Meaning)) continue;
             var construction = new VerbPreposition
             {
-                GermanVerbId = verb.Id, VerbDisplay = entry.Display, Preposition = entry.Prep,
-                Case = entry.Case, Meaning = entry.Meaning
+                GermanVerbId = verb.Id,
+                VerbDisplay = entry.Display,
+                Preposition = entry.Prep,
+                Case = entry.Case,
+                Meaning = entry.Meaning
             };
             db.VerbPrepositions.Add(construction);
             existing.Add(construction);

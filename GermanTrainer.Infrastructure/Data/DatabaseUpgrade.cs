@@ -32,7 +32,7 @@ public static class DatabaseUpgrade
         }
         else
         {
-        db.Database.ExecuteSqlRaw("""
+            db.Database.ExecuteSqlRaw("""
             DECLARE @lockResult int;
             EXEC @lockResult = sys.sp_getapplock
                 @Resource = N'GermanTrainer.SchemaUpgrade', @LockMode = N'Exclusive',

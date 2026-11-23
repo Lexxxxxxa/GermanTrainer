@@ -3,7 +3,6 @@ using GermanTrainer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Xunit;
 
 namespace GermanTrainer.Tests;
 
@@ -15,7 +14,8 @@ public class DatabaseModelTests
     private static TrainerDbContext Context() => new(new DbContextOptionsBuilder<TrainerDbContext>()
         .UseSqlServer("Server=localhost;Database=ModelOnly;Integrated Security=True;TrustServerCertificate=True").Options);
 
-    [Fact] public void ModelGeneratesNewTablesWithoutConnection()
+    [Fact]
+    public void ModelGeneratesNewTablesWithoutConnection()
     {
         using var db = Context();
         var script = db.Database.GenerateCreateScript();
@@ -26,14 +26,16 @@ public class DatabaseModelTests
         Assert.Contains("[Meaning] nvarchar(250)", script);
     }
 
-    [Fact] public void ProgressHasCompositeKeyIncludingMode()
+    [Fact]
+    public void ProgressHasCompositeKeyIncludingMode()
     {
         using var db = Context();
         var key = db.Model.FindEntityType(typeof(TrainingProgress))!.FindPrimaryKey()!;
         Assert.Equal(new[] { "Mode", "ItemKey" }, key.Properties.Select(p => p.Name));
     }
 
-    [Fact] public void VerbRelationshipIsOneToManyAndCascade()
+    [Fact]
+    public void VerbRelationshipIsOneToManyAndCascade()
     {
         using var db = Context();
         var fk = db.Model.FindEntityType(typeof(VerbPreposition))!.GetForeignKeys().Single();
@@ -41,7 +43,8 @@ public class DatabaseModelTests
         Assert.Equal(DeleteBehavior.Cascade, fk.DeleteBehavior);
     }
 
-    [Fact] public void StarterConstructionsReferenceExistingSeeds()
+    [Fact]
+    public void StarterConstructionsReferenceExistingSeeds()
     {
         using var db = Context();
         var verbs = db.GetService<IDesignTimeModel>().Model.FindEntityType(typeof(GermanVerb))!.GetSeedData()
@@ -51,7 +54,8 @@ public class DatabaseModelTests
         Assert.Equal(20, VerbPrepositionSeeds.Entries.Distinct().Count());
     }
 
-    [Fact] public void SeedCreationDatesAreStable()
+    [Fact]
+    public void SeedCreationDatesAreStable()
     {
         using var db = Context();
         var model = db.GetService<IDesignTimeModel>().Model;

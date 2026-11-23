@@ -9,7 +9,8 @@ namespace GermanTrainer.Wpf.Tests;
 
 public sealed class ViewModelTests
 {
-    [Fact] public void NavigationOpensTranslationAndKeepsSession()
+    [Fact]
+    public void NavigationOpensTranslationAndKeepsSession()
     {
         var fake = new FakeServices();
         var main = fake.Main();
@@ -21,7 +22,8 @@ public sealed class ViewModelTests
         Assert.Same(page, main.CurrentPage);
         Assert.Equal(1, fake.ReloadCount);
     }
-    [Fact] public void TranslationSwitchSeparatesScoresAndResetLeavesHistory()
+    [Fact]
+    public void TranslationSwitchSeparatesScoresAndResetLeavesHistory()
     {
         var fake = new FakeServices();
         var page = new TrainerTranslationViewModel(fake, fake, fake);
@@ -38,7 +40,8 @@ public sealed class ViewModelTests
         page.SwitchDirectionCommand.Execute(null);
         Assert.Equal(1, page.CorrectCount);
     }
-    [Fact] public void ArticleResetDoesNotRecordOrAdvanceQuestion()
+    [Fact]
+    public void ArticleResetDoesNotRecordOrAdvanceQuestion()
     {
         var fake = new FakeServices();
         var page = new TrainerArticlesViewModel(fake, fake, fake);
@@ -48,7 +51,8 @@ public sealed class ViewModelTests
         Assert.Equal(1, fake.Recorded);
         Assert.True(page.IsAnswered);
     }
-    [Fact] public void PrepositionsRequireBothSelectionsAndResetIsSessionOnly()
+    [Fact]
+    public void PrepositionsRequireBothSelectionsAndResetIsSessionOnly()
     {
         var fake = new FakeServices();
         var page = new TrainerPrepositionsViewModel(fake, fake, fake);
@@ -63,7 +67,8 @@ public sealed class ViewModelTests
         Assert.Equal(0, page.CorrectCount);
         Assert.Equal(1, fake.Recorded);
     }
-    [Fact] public void CanceledResetKeepsScore()
+    [Fact]
+    public void CanceledResetKeepsScore()
     {
         var fake = new FakeServices { Confirmed = false };
         var page = new TrainerArticlesViewModel(fake, fake, fake);
@@ -71,7 +76,8 @@ public sealed class ViewModelTests
         page.ResetStatisticsCommand.Execute(null);
         Assert.Equal(1, page.CorrectCount);
     }
-    [Fact] public void FailedSaveDoesNotCountAnswer()
+    [Fact]
+    public void FailedSaveDoesNotCountAnswer()
     {
         var fake = new FakeServices { FailRecord = true };
         var page = new TrainerTranslationViewModel(fake, fake, fake);
@@ -80,7 +86,8 @@ public sealed class ViewModelTests
         Assert.False(page.IsAnswered);
         Assert.Equal(0, page.CorrectCount);
     }
-    [Fact] public void DisabledCommandDoesNotExecute()
+    [Fact]
+    public void DisabledCommandDoesNotExecute()
     {
         var count = 0;
         new RelayCommand(() => count++, () => false).Execute(null);
@@ -88,49 +95,69 @@ public sealed class ViewModelTests
         Assert.Equal(0, count);
     }
 
-    [Fact] public void XamlResourcesAndAllPagesLoadOnStaThread()
+    [Fact]
+    public void XamlResourcesAndAllPagesLoadOnStaThread()
     {
         Exception? failure = null;
         var thread = new Thread(() =>
         {
             try
             {
-                var app = new App(); app.InitializeComponent();
+                var app = new App();
+                app.InitializeComponent();
+
                 var fake = new FakeServices();
                 var main = fake.Main();
                 var window = new MainWindow { DataContext = main };
+
                 object[] pages =
                 [
                     new MenuView { DataContext = main.CurrentPage },
-                    new ArticlesTrainerView { DataContext = new TrainerArticlesViewModel(fake, fake, fake) },
-                    new TranslationTrainerView { DataContext = new TrainerTranslationViewModel(fake, fake, fake) },
-                    new PrepositionsTrainerView { DataContext = new TrainerPrepositionsViewModel(fake, fake, fake) },
-                    new SettingsView { DataContext = new SettingsViewModel(fake, fake, () => { }, () => { }) },
-                    new VocabularyView { DataContext = new VocabularyViewModel(fake, fake, () => { }) }
+                new ArticlesTrainerView { DataContext = new TrainerArticlesViewModel(fake, fake, fake) },
+                new TranslationTrainerView { DataContext = new TrainerTranslationViewModel(fake, fake, fake) },
+                new PrepositionsTrainerView { DataContext = new TrainerPrepositionsViewModel(fake, fake, fake) },
+                new SettingsView { DataContext = new SettingsViewModel(fake, fake, () => { }, () => { }) },
+                new VocabularyView { DataContext = new VocabularyViewModel(fake, fake, () => { }) }
                 ];
-                foreach (var uri in new[] { "DarkTheme.xaml", "LightTheme.xaml" })
+
+                var asmName = typeof(App).Assembly.GetName().Name;
+
+                foreach (var file in new[] { "DarkTheme.xaml", "LightTheme.xaml" })
                 {
-                    var theme = new ResourceDictionary { Source = new Uri($"/GermanTrainer;component/Themes/{uri}", UriKind.Relative) };
+                    var theme = new ResourceDictionary
+                    {
+                        Source = new Uri($"/{asmName};component/Themes/{file}", UriKind.Relative)
+                    };
                     app.Resources.MergedDictionaries[0] = theme;
+
                     foreach (var element in pages.Cast<FrameworkElement>().Append(window))
                     {
                         element.Measure(new Size(1360, 880));
                         element.Arrange(new Rect(0, 0, 1360, 880));
                         element.UpdateLayout();
+
                         Assert.NotNull(element.FindResource("BackgroundBrush"));
                         Assert.NotNull(element.FindResource("FlatButton"));
                     }
                 }
+
                 app.Shutdown();
             }
-            catch (Exception ex) { failure = ex; }
+            catch (Exception ex)
+            {
+                failure = ex;
+            }
         });
-        thread.SetApartmentState(ApartmentState.STA); thread.Start(); thread.Join();
+
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+
         Assert.Null(failure);
     }
 }
 
-internal sealed class FakeServices : IWordsService, IDialogService, IArticlesTrainingService,
+    internal sealed class FakeServices : IWordsService, IDialogService, IArticlesTrainingService,
     ITranslationTrainingService, IPrepositionsTrainingService, IVocabularyService
 {
     public bool Confirmed = true;

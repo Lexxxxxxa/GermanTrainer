@@ -21,27 +21,33 @@ public sealed class InfrastructureTests : IDisposable
     public void Dispose() => _connection.Dispose();
     private static WordDraft NewVerb(string word = "test-verb") => new()
     {
-        Type = WordType.Verb, Word = word, Translation = "тест", Lesson = 999,
+        Type = WordType.Verb,
+        Word = word,
+        Translation = "тест",
+        Lesson = 999,
         Constructions =
         [
             new() { VerbDisplay = word, Meaning = "значение один", Preposition = "auf", Case = GrammaticalCase.Akkusativ },
             new() { VerbDisplay = word, Meaning = "значение два", Preposition = "mit", Case = GrammaticalCase.Dativ }
         ]
     };
-    [Fact] public void FreshDatabaseHasVocabularyAndStarterConstructions()
+    [Fact]
+    public void FreshDatabaseHasVocabularyAndStarterConstructions()
     {
         using var db = _factory.Create();
         Assert.True(_vocabulary.GetAll().Count > 800);
         Assert.Equal(20, db.VerbPrepositions.Count());
     }
-    [Fact] public void UpgradeDoesNotResurrectDeletedConstructions()
+    [Fact]
+    public void UpgradeDoesNotResurrectDeletedConstructions()
     {
         using (var db = _factory.Create()) { db.Remove(db.VerbPrepositions.First()); db.SaveChanges(); }
         new WordsService(_factory).EnsureDatabaseCreated();
         using var check = _factory.Create();
         Assert.Equal(19, check.VerbPrepositions.Count());
     }
-    [Fact] public void OldSchemaUpgradePreservesVocabularyAndStatistics()
+    [Fact]
+    public void OldSchemaUpgradePreservesVocabularyAndStatistics()
     {
         int id;
         using (var db = _factory.Create())
@@ -55,7 +61,8 @@ public sealed class InfrastructureTests : IDisposable
         Assert.Equal(17, check.GermanNouns.Find(id)!.CorrectAnswers);
         Assert.Equal(20, check.VerbPrepositions.Count());
     }
-    [Fact] public void CreateUpdateAndDeleteMultipleConstructions()
+    [Fact]
+    public void CreateUpdateAndDeleteMultipleConstructions()
     {
         var draft = NewVerb(); _vocabulary.Save(draft);
         var saved = _vocabulary.GetAll().Single(w => w.Type == WordType.Verb && w.Id == draft.Id);
@@ -72,7 +79,8 @@ public sealed class InfrastructureTests : IDisposable
         using var check = _factory.Create();
         Assert.Empty(check.VerbPrepositions.Where(c => c.GermanVerbId == draft.Id));
     }
-    [Fact] public void EditingVocabularyKeepsLearningCounters()
+    [Fact]
+    public void EditingVocabularyKeepsLearningCounters()
     {
         var draft = NewVerb(); _vocabulary.Save(draft);
         var service = new TrainerTranslationService(_factory, new(_factory));
@@ -82,14 +90,16 @@ public sealed class InfrastructureTests : IDisposable
         Assert.Equal(1, db.GermanVerbs.Find(draft.Id)!.WrongAnswers);
         Assert.Equal(1, db.TrainingProgress.Single().WrongAnswers);
     }
-    [Fact] public void DuplicateSaveIsRejectedWithoutChangingId()
+    [Fact]
+    public void DuplicateSaveIsRejectedWithoutChangingId()
     {
         _vocabulary.Save(NewVerb());
         var duplicate = NewVerb();
         Assert.Throws<ArgumentException>(() => _vocabulary.Save(duplicate));
         Assert.Equal(0, duplicate.Id);
     }
-    [Fact] public void TranslationDirectionsKeepSeparateHistory()
+    [Fact]
+    public void TranslationDirectionsKeepSeparateHistory()
     {
         var draft = NewVerb(); _vocabulary.Save(draft);
         var svc = new TrainerTranslationService(_factory, new(_factory));
@@ -116,7 +126,8 @@ public sealed class InfrastructureTests : IDisposable
         _vocabulary.Delete(type, draft.Id);
         Assert.DoesNotContain(_vocabulary.GetAll(), w => w.Type == type && w.Id == draft.Id);
     }
-    [Fact] public void InvalidConstructionDoesNotCreateVerb()
+    [Fact]
+    public void InvalidConstructionDoesNotCreateVerb()
     {
         var draft = NewVerb(); draft.Constructions[0].Meaning = "";
         Assert.Throws<ArgumentException>(() => _vocabulary.Save(draft));

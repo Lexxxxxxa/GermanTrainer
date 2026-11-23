@@ -79,7 +79,7 @@ public class TrainerTranslationViewModel : ViewModelBase, ITrainerViewModel
         if (IsAnswered || _word == null || SelectedAnswer == null) return;
         var correctAnswer = TranslationChoices.Answer(_word, _reverse);
         var correct = SelectedAnswer.Text == correctAnswer;
-        // Persist before changing UI state, so failed saves don't count as completed answers.
+
         _service.RecordAnswer(_word, _reverse, correct);
         Score.Record(correct);
         NotifyScore();
