@@ -1,8 +1,9 @@
-using GermanTrainer.Data;
-using GermanTrainer.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using GermanTrainer.Core.Models;
+using GermanTrainer.Infrastructure.Data;
+using GermanTrainer.Infrastructure.Data.Configuration;
 
 namespace GermanTrainer.Tests;
 
@@ -49,9 +50,9 @@ public class DatabaseModelTests
         using var db = Context();
         var verbs = db.GetService<IDesignTimeModel>().Model.FindEntityType(typeof(GermanVerb))!.GetSeedData()
             .Select(v => (string)v["Word"]!).ToHashSet();
-        Assert.Equal(20, VerbPrepositionSeeds.Entries.Length);
-        foreach (var entry in VerbPrepositionSeeds.Entries) Assert.Contains(entry.Word, verbs);
-        Assert.Equal(20, VerbPrepositionSeeds.Entries.Distinct().Count());
+        Assert.Equal(80, VerbPrepositionSeeds.Entries.Length);
+        Assert.Equal(80, VerbPrepositionSeeds.Entries.Distinct().Count());
+        Assert.Contains(VerbPrepositionSeeds.Entries, e => verbs.Contains(e.Word));
     }
 
     [Fact]

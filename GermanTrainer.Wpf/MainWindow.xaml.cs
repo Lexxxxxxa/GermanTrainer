@@ -1,12 +1,11 @@
-﻿using System.Windows;
+using System.Windows;
 
-namespace GermanTrainer
+namespace GermanTrainer.Wpf;
+
+public partial class MainWindow : Window
 {
-    public partial class MainWindow : Window
+    public MainWindow()
     {
-        public MainWindow()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

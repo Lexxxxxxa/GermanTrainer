@@ -1,15 +1,15 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-using GermanTrainer.Models;
-using GermanTrainer.Services;
-using GermanTrainer.ViewModels.Base;
+using GermanTrainer.Core.Models;
+using GermanTrainer.Core.Services;
+using GermanTrainer.Wpf.Services;
+using GermanTrainer.Wpf.ViewModels.Base;
 
-namespace GermanTrainer.ViewModels;
+namespace GermanTrainer.Wpf.ViewModels;
 
 public class TrainerTranslationViewModel : ViewModelBase, ITrainerViewModel
 {
     private readonly ITranslationTrainingService _service;
-    private readonly IWordsService _wordsService;
     private readonly IDialogService _dialogs;
     private readonly SessionScore _forwardScore = new();
     private readonly SessionScore _reverseScore = new();
@@ -19,12 +19,11 @@ public class TrainerTranslationViewModel : ViewModelBase, ITrainerViewModel
     private bool _answered;
     private string? _feedback;
 
-    public TrainerTranslationViewModel(ITranslationTrainingService service, IWordsService wordsService, IDialogService dialogService)
+    public TrainerTranslationViewModel(ITranslationTrainingService service, IDialogService dialogService)
     {
-        _service = service; _wordsService = wordsService; _dialogs = dialogService;
+        _service = service; _dialogs = dialogService;
         SelectAnswerCommand = new RelayCommand<AnswerOptionViewModel>(SelectAnswer, o => !IsAnswered && o != null && _word != null);
         CheckOrNextCommand = new RelayCommand(CheckOrNext, () => IsAnswered || SelectedAnswer != null);
-        ManageWordsCommand = new RelayCommand(OpenWordsManagement);
         SwitchDirectionCommand = new RelayCommand(SwitchDirection);
         ResetStatisticsCommand = new RelayCommand(ResetStatistics);
         LoadNextQuestion();
@@ -66,7 +65,6 @@ public class TrainerTranslationViewModel : ViewModelBase, ITrainerViewModel
     public string ActionButtonToolTip => IsAnswered ? "Показать следующее слово" : "Проверить ответ";
     public ICommand SelectAnswerCommand { get; }
     public ICommand CheckOrNextCommand { get; }
-    public ICommand ManageWordsCommand { get; }
     public ICommand ResetStatisticsCommand { get; }
     public ICommand SwitchDirectionCommand { get; }
 
@@ -89,8 +87,6 @@ public class TrainerTranslationViewModel : ViewModelBase, ITrainerViewModel
     }
     public void NextQuestion() => LoadNextQuestion();
     public void Refresh() { _service.ReloadWords(); LoadNextQuestion(); }
-    public void OpenWordsManagement() => _dialogs.ShowWordsManagement(
-        new WordsManagementViewModel(WordsManagementMode.Translation, _wordsService, Refresh));
     private void CheckOrNext() { if (IsAnswered) NextQuestion(); else CheckAnswer(); }
     private void SwitchDirection()
     {

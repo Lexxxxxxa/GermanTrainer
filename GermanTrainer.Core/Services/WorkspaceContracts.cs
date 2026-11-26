@@ -1,6 +1,6 @@
-using GermanTrainer.Models;
+using GermanTrainer.Core.Models;
 
-namespace GermanTrainer.Services;
+namespace GermanTrainer.Core.Services;
 
 public interface IVocabularyService
 {
@@ -16,7 +16,8 @@ public static class VocabularyValidation
     {
         var errors = new List<string>();
         if (!Enum.IsDefined(draft.Type)) errors.Add("Неизвестный тип слова.");
-        if (string.IsNullOrWhiteSpace(draft.Word) || draft.Word.Length > 50) errors.Add("Слово: от 1 до 50 символов.");
+        const int maxWord = 50;
+        if (string.IsNullOrWhiteSpace(draft.Word) || draft.Word.Length > maxWord) errors.Add($"Слово: от 1 до {maxWord} символов.");
         if (string.IsNullOrWhiteSpace(draft.Translation) || draft.Translation.Length > 200) errors.Add("Перевод: от 1 до 200 символов.");
         if (draft.Lesson is < 1 or > 999) errors.Add("Номер урока: от 1 до 999.");
         if (draft.Level != "" && !new[] { "A1", "A2", "B1", "B2", "C1", "C2" }.Contains(draft.Level))

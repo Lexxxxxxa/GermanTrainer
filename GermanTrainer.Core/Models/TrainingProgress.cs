@@ -1,9 +1,9 @@
-namespace GermanTrainer.Models;
+namespace GermanTrainer.Core.Models;
 
 public enum TrainingMode { Articles, GermanToRussian, RussianToGerman, VerbPrepositions }
 
-///
-/// <summary>Persistent learning history. Session reset never changes these records
+/// <summary>
+/// Persistent learning history. Session reset never changes these records
 /// </summary>
 public class TrainingProgress
 {

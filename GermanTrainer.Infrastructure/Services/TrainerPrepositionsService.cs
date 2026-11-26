@@ -1,8 +1,10 @@
-using GermanTrainer.Data;
-using GermanTrainer.Models;
 using Microsoft.EntityFrameworkCore;
+using GermanTrainer.Core.Models;
+using GermanTrainer.Core.Services;
+using GermanTrainer.Infrastructure.Common;
+using GermanTrainer.Infrastructure.Data;
 
-namespace GermanTrainer.Services;
+namespace GermanTrainer.Infrastructure.Services;
 
 public class TrainerPrepositionsService(ITrainerDbContextFactory factory, LearningHistoryService history) : IPrepositionsTrainingService
 {
@@ -12,10 +14,10 @@ public class TrainerPrepositionsService(ITrainerDbContextFactory factory, Learni
     public VerbPreposition? GetNext()
     {
         using var db = factory.Create();
-        var lessons = AppSettings.EnabledLessons.ToList();
-        // Dedicated grammar mode: lesson and hidden filters apply, word-type checkboxes don't.
+
         var items = db.VerbPrepositions.AsNoTracking().Include(p => p.Verb)
-            .Where(p => !p.Verb.IsHidden && (lessons.Count == 0 || lessons.Contains(p.Verb.Lesson))).ToList();
+            .Where(p => !p.Verb.IsHidden).ToList()
+            .Where(p => AppSettings.IsModuleEnabled(p.Verb.Level, p.Verb.Lesson)).ToList();
         var next = AdaptiveSelection.Pick(items, p => $"Construction:{p.Id}",
             _history.Read(TrainingMode.VerbPrepositions), _previousKey, DateTime.UtcNow, Random.Shared);
         if (next != null)
@@ -32,5 +34,4 @@ public class TrainerPrepositionsService(ITrainerDbContextFactory factory, Learni
         LearningHistoryService.RecordAnswer(db, TrainingMode.VerbPrepositions, $"Construction:{item.Id}", correct);
         db.SaveChanges();
     }
-
 }

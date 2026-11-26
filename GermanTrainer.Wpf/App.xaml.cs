@@ -1,13 +1,16 @@
 using System.Windows;
 using System.Windows.Threading;
-using GermanTrainer.Data;
-using GermanTrainer.Services;
-using GermanTrainer.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using GermanTrainer.Core.Services;
+using GermanTrainer.Infrastructure.Data;
+using GermanTrainer.Infrastructure.Services;
+using GermanTrainer.Wpf.Common;
+using GermanTrainer.Wpf.Services;
+using GermanTrainer.Wpf.ViewModels;
 
-namespace GermanTrainer;
+namespace GermanTrainer.Wpf;
 
 public partial class App : Application
 {

@@ -1,214 +1,203 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-using GermanTrainer.Models;
-using GermanTrainer.Services;
-using GermanTrainer.ViewModels.Base;
+using GermanTrainer.Core.Models;
+using GermanTrainer.Core.Services;
+using GermanTrainer.Wpf.Services;
+using GermanTrainer.Wpf.ViewModels.Base;
 
-namespace GermanTrainer.ViewModels
+namespace GermanTrainer.Wpf.ViewModels;
+
+public class TrainerArticlesViewModel : ViewModelBase, ITrainerViewModel
 {
-    public class TrainerArticlesViewModel : ViewModelBase, ITrainerViewModel
+    private readonly IArticlesTrainingService _service;
+    private readonly IDialogService _dialogService;
+
+    private GermanNoun? _currentNoun;
+    private string? _selectedArticle;
+    private string? _feedback;
+    private bool _isAnswered;
+    private int _correctCount;
+    private int _wrongCount;
+
+    public TrainerArticlesViewModel(IArticlesTrainingService service, IDialogService dialogService)
     {
-        private readonly IArticlesTrainingService _service;
-        private readonly IWordsService _wordsService;
-        private readonly IDialogService _dialogService;
+        _service = service;
+        _dialogService = dialogService;
 
-        private GermanNoun? _currentNoun;
-        private string? _selectedArticle;
-        private string? _feedback;
-        private bool _isAnswered;
-        private int _correctCount;
-        private int _wrongCount;
-
-        public TrainerArticlesViewModel(IArticlesTrainingService service, IWordsService wordsService, IDialogService dialogService)
+        ArticleOptions = new ObservableCollection<ArticleOptionViewModel>
         {
-            _service = service;
-            _wordsService = wordsService;
-            _dialogService = dialogService;
+            new("der"),
+            new("die"),
+            new("das")
+        };
 
-            ArticleOptions = new ObservableCollection<ArticleOptionViewModel>
+        SelectArticleCommand = new RelayCommand<string>(SelectArticle, _ => !IsAnswered && CurrentNoun != null);
+        CheckOrNextCommand = new RelayCommand(CheckOrNext, () => IsAnswered || SelectedArticle != null);
+        ResetStatisticsCommand = new RelayCommand(() =>
+        {
+            if (_dialogService.Confirm("Сбросить счётчики текущей сессии артиклей?\nИстория обучения сохранится.", "Сброс статистики"))
             {
-                new("der"),
-                new("die"),
-                new("das")
-            };
+                CorrectCount = 0;
+                WrongCount = 0;
+            }
+        });
 
-            SelectArticleCommand = new RelayCommand<string>(SelectArticle, _ => !IsAnswered && CurrentNoun != null);
-            CheckOrNextCommand = new RelayCommand(CheckOrNext, () => IsAnswered || SelectedArticle != null);
-            ManageWordsCommand = new RelayCommand(OpenWordsManagement);
-            ResetStatisticsCommand = new RelayCommand(() =>
-            {
-                if (_dialogService.Confirm("Сбросить счётчики текущей сессии артиклей?\nИстория обучения сохранится.", "Сброс статистики"))
-                {
-                    CorrectCount = 0;
-                    WrongCount = 0;
-                }
-            });
+        LoadNextQuestion();
+    }
 
-            LoadNextQuestion();
+    #region Properties
+
+    public ObservableCollection<ArticleOptionViewModel> ArticleOptions { get; }
+
+    public GermanNoun? CurrentNoun
+    {
+        get => _currentNoun;
+        private set
+        {
+            if (SetProperty(ref _currentNoun, value))
+                OnPropertyChanged(nameof(CurrentNounDisplay));
         }
+    }
 
-        #region Свойства
+    public string CurrentNounDisplay => CurrentNoun?.Word ?? "Загрузка...";
 
-        public ObservableCollection<ArticleOptionViewModel> ArticleOptions { get; }
-
-        public GermanNoun? CurrentNoun
+    public string? SelectedArticle
+    {
+        get => _selectedArticle;
+        private set
         {
-            get => _currentNoun;
-            private set
+            if (SetProperty(ref _selectedArticle, value))
             {
-                if (SetProperty(ref _currentNoun, value))
-                    OnPropertyChanged(nameof(CurrentNounDisplay));
+                foreach (var option in ArticleOptions)
+                    option.IsSelected = option.Article == value;
             }
         }
+    }
 
-        public string CurrentNounDisplay => CurrentNoun?.Word ?? "Загрузка...";
+    public string? Feedback
+    {
+        get => _feedback;
+        private set => SetProperty(ref _feedback, value);
+    }
 
-        public string? SelectedArticle
+    public bool IsAnswered
+    {
+        get => _isAnswered;
+        private set
         {
-            get => _selectedArticle;
-            private set
+            if (SetProperty(ref _isAnswered, value))
             {
-                if (SetProperty(ref _selectedArticle, value))
-                {
-                    foreach (var option in ArticleOptions)
-                        option.IsSelected = option.Article == value;
-                }
+                OnPropertyChanged(nameof(CanAnswer));
+                OnPropertyChanged(nameof(ActionButtonText));
+                OnPropertyChanged(nameof(ActionButtonToolTip));
             }
         }
+    }
 
-        public string? Feedback
+    public bool CanAnswer => !IsAnswered;
+
+    public string ActionButtonText => IsAnswered ? "→ Дальше" : "✓ Проверить";
+
+    public string ActionButtonToolTip => IsAnswered ? "Показать следующее слово" : "Проверить ответ";
+
+    public int CorrectCount
+    {
+        get => _correctCount;
+        private set
         {
-            get => _feedback;
-            private set => SetProperty(ref _feedback, value);
+            if (SetProperty(ref _correctCount, value))
+                OnPropertyChanged(nameof(SuccessPercentage));
+        }
+    }
+
+    public int WrongCount
+    {
+        get => _wrongCount;
+        private set
+        {
+            if (SetProperty(ref _wrongCount, value))
+                OnPropertyChanged(nameof(SuccessPercentage));
+        }
+    }
+
+    public string SuccessPercentage
+    {
+        get
+        {
+            var total = CorrectCount + WrongCount;
+            if (total == 0) return "0%";
+            return $"{Math.Round((double)CorrectCount / total * 100, 1)}%";
+        }
+    }
+
+    #endregion
+
+    #region Commands
+    public ICommand SelectArticleCommand { get; }
+    public ICommand CheckOrNextCommand { get; }
+    public ICommand ResetStatisticsCommand { get; }
+
+    #endregion
+
+    public void SelectArticle(string? article)
+    {
+        if (!IsAnswered && article != null)
+            SelectedArticle = article;
+    }
+
+    public void CheckAnswer()
+    {
+        if (IsAnswered || CurrentNoun == null || SelectedArticle == null)
+            return;
+
+        bool isCorrect = SelectedArticle == CurrentNoun.Article;
+        _service.RecordAnswer(CurrentNoun, isCorrect);
+        IsAnswered = true;
+        var answerText = $"{CurrentNoun.Article} {CurrentNoun.Word}";
+        var translation = string.IsNullOrEmpty(CurrentNoun.Translation) ? "" : $" ({CurrentNoun.Translation})";
+
+        if (isCorrect)
+        {
+            CorrectCount++;
+            Feedback = $"✓ Правильно! {answerText}{translation}";
+        }
+        else
+        {
+            WrongCount++;
+            Feedback = $"✗ Неправильно. Правильный ответ: {answerText}{translation}";
         }
 
-        public bool IsAnswered
-        {
-            get => _isAnswered;
-            private set
-            {
-                if (SetProperty(ref _isAnswered, value))
-                {
-                    OnPropertyChanged(nameof(CanAnswer));
-                    OnPropertyChanged(nameof(ActionButtonText));
-                    OnPropertyChanged(nameof(ActionButtonToolTip));
-                }
-            }
-        }
+        CommandManager.InvalidateRequerySuggested();
+    }
 
-        public bool CanAnswer => !IsAnswered;
+    public void NextQuestion() => LoadNextQuestion();
 
-        public string ActionButtonText => IsAnswered ? "→ Дальше" : "✓ Проверить";
+    public void ResetQuiz()
+    {
+        CorrectCount = 0;
+        WrongCount = 0;
+        LoadNextQuestion();
+    }
 
-        public string ActionButtonToolTip => IsAnswered ? "Показать следующее слово" : "Проверить ответ";
+    public void Refresh() => LoadNextQuestion();
 
-        public int CorrectCount
-        {
-            get => _correctCount;
-            private set
-            {
-                if (SetProperty(ref _correctCount, value))
-                    OnPropertyChanged(nameof(SuccessPercentage));
-            }
-        }
+    private void CheckOrNext()
+    {
+        if (IsAnswered)
+            NextQuestion();
+        else
+            CheckAnswer();
+    }
 
-        public int WrongCount
-        {
-            get => _wrongCount;
-            private set
-            {
-                if (SetProperty(ref _wrongCount, value))
-                    OnPropertyChanged(nameof(SuccessPercentage));
-            }
-        }
+    private void LoadNextQuestion()
+    {
+        CurrentNoun = _service.GetNextNoun();
+        SelectedArticle = null;
+        IsAnswered = false;
+        Feedback = CurrentNoun == null
+            ? "Нет доступных слов для тренировки! Добавьте новые слова или снимите скрытие с существующих."
+            : null;
 
-        public string SuccessPercentage
-        {
-            get
-            {
-                var total = CorrectCount + WrongCount;
-                if (total == 0) return "0%";
-                return $"{Math.Round((double)CorrectCount / total * 100, 1)}%";
-            }
-        }
-
-        #endregion
-
-        #region Команды
-
-        public ICommand SelectArticleCommand { get; }
-        public ICommand CheckOrNextCommand { get; }
-        public ICommand ManageWordsCommand { get; }
-        public ICommand ResetStatisticsCommand { get; }
-
-        #endregion
-
-        public void SelectArticle(string? article)
-        {
-            if (!IsAnswered && article != null)
-                SelectedArticle = article;
-        }
-
-        public void CheckAnswer()
-        {
-            if (IsAnswered || CurrentNoun == null || SelectedArticle == null)
-                return;
-
-            bool isCorrect = SelectedArticle == CurrentNoun.Article;
-            _service.RecordAnswer(CurrentNoun, isCorrect);
-            IsAnswered = true;
-            var answerText = $"{CurrentNoun.Article} {CurrentNoun.Word}";
-            var translation = string.IsNullOrEmpty(CurrentNoun.Translation) ? "" : $" ({CurrentNoun.Translation})";
-
-            if (isCorrect)
-            {
-                CorrectCount++;
-                Feedback = $"✓ Правильно! {answerText}{translation}";
-            }
-            else
-            {
-                WrongCount++;
-                Feedback = $"✗ Неправильно. Правильный ответ: {answerText}{translation}";
-            }
-
-            CommandManager.InvalidateRequerySuggested();
-        }
-
-        public void NextQuestion() => LoadNextQuestion();
-
-        public void ResetQuiz()
-        {
-            CorrectCount = 0;
-            WrongCount = 0;
-            LoadNextQuestion();
-        }
-
-        public void Refresh() => LoadNextQuestion();
-
-        public void OpenWordsManagement()
-        {
-            var viewModel = new WordsManagementViewModel(WordsManagementMode.Articles, _wordsService, Refresh);
-            _dialogService.ShowWordsManagement(viewModel);
-        }
-
-        private void CheckOrNext()
-        {
-            if (IsAnswered)
-                NextQuestion();
-            else
-                CheckAnswer();
-        }
-
-        private void LoadNextQuestion()
-        {
-            CurrentNoun = _service.GetNextNoun();
-            SelectedArticle = null;
-            IsAnswered = false;
-            Feedback = CurrentNoun == null
-                ? "Нет доступных слов для тренировки! Добавьте новые слова или снимите скрытие с существующих."
-                : null;
-
-            CommandManager.InvalidateRequerySuggested();
-        }
+        CommandManager.InvalidateRequerySuggested();
     }
 }

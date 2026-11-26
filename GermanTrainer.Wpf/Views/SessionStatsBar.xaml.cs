@@ -1,15 +1,14 @@
-﻿using System.Windows.Controls;
+using System.Windows.Controls;
 
-namespace GermanTrainer.Views
+namespace GermanTrainer.Wpf.Views;
+
+/// <summary>
+/// Interaction logic for SessionStatsBar.xaml
+/// </summary>
+public partial class SessionStatsBar : UserControl
 {
-    /// <summary>
-    /// Interaction logic for SessionStatsBar.xaml
-    /// </summary>
-    public partial class SessionStatsBar : UserControl
+    public SessionStatsBar()
     {
-        public SessionStatsBar()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace GermanTrainer.Data;
+namespace GermanTrainer.Infrastructure.Data;
 
 public interface ITrainerDbContextFactory
 {

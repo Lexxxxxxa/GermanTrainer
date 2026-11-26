@@ -1,4 +1,4 @@
-namespace GermanTrainer.Models;
+namespace GermanTrainer.Core.Models;
 
 ///
 /// <summary>Shared representation for translation choice generation, independent of EF and WPF

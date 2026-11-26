@@ -1,8 +1,8 @@
-using GermanTrainer.Data;
-using GermanTrainer.Models;
-using GermanTrainer.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using GermanTrainer.Core.Models;
+using GermanTrainer.Infrastructure.Data;
+using GermanTrainer.Infrastructure.Services;
 
 namespace GermanTrainer.Tests;
 
@@ -36,7 +36,7 @@ public sealed class InfrastructureTests : IDisposable
     {
         using var db = _factory.Create();
         Assert.True(_vocabulary.GetAll().Count > 800);
-        Assert.Equal(20, db.VerbPrepositions.Count());
+        Assert.Equal(73, db.VerbPrepositions.Count());
     }
     [Fact]
     public void UpgradeDoesNotResurrectDeletedConstructions()
@@ -44,7 +44,7 @@ public sealed class InfrastructureTests : IDisposable
         using (var db = _factory.Create()) { db.Remove(db.VerbPrepositions.First()); db.SaveChanges(); }
         new WordsService(_factory).EnsureDatabaseCreated();
         using var check = _factory.Create();
-        Assert.Equal(19, check.VerbPrepositions.Count());
+        Assert.Equal(72, check.VerbPrepositions.Count());
     }
     [Fact]
     public void OldSchemaUpgradePreservesVocabularyAndStatistics()
@@ -59,7 +59,7 @@ public sealed class InfrastructureTests : IDisposable
         new WordsService(_factory).EnsureDatabaseCreated();
         using var check = _factory.Create();
         Assert.Equal(17, check.GermanNouns.Find(id)!.CorrectAnswers);
-        Assert.Equal(20, check.VerbPrepositions.Count());
+        Assert.Equal(73, check.VerbPrepositions.Count());
     }
     [Fact]
     public void CreateUpdateAndDeleteMultipleConstructions()

@@ -1,8 +1,8 @@
-using GermanTrainer.Data;
-using GermanTrainer.Models;
 using Microsoft.EntityFrameworkCore;
+using GermanTrainer.Infrastructure.Data;
+using GermanTrainer.Core.Models;
 
-namespace GermanTrainer.Services;
+namespace GermanTrainer.Infrastructure.Services;
 
 public class LearningHistoryService(ITrainerDbContextFactory factory)
 {
@@ -13,12 +13,12 @@ public class LearningHistoryService(ITrainerDbContextFactory factory)
             .ToDictionary(p => p.ItemKey);
     }
 
-    // Record a real display, even if the user skips the question.
     public void RecordShown(TrainingMode mode, string key)
     {
         using var db = factory.Create();
         var progress = GetOrCreate(db, mode, key);
         progress.RecordShown(DateTime.UtcNow);
+
         db.SaveChanges();
     }
 
@@ -26,14 +26,14 @@ public class LearningHistoryService(ITrainerDbContextFactory factory)
     {
         using var db = factory.Create();
         RecordAnswer(db, mode, key, correct);
+
         db.SaveChanges();
     }
 
-    // Allows legacy counters and new history to be saved atomically in the same DbContext.
     public static void RecordAnswer(TrainerDbContext db, TrainingMode mode, string key, bool correct)
     {
         var progress = GetOrCreate(db, mode, key);
-        // Each correct answer reduces the effect of the most recent mistakes by 30%.
+
         progress.RecordAnswer(correct);
     }
 

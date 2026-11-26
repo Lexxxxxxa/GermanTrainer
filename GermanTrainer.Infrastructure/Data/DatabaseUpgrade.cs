@@ -1,11 +1,12 @@
-using GermanTrainer.Models;
 using Microsoft.EntityFrameworkCore;
+using GermanTrainer.Core.Models;
+using GermanTrainer.Infrastructure.Data.Configuration;
 
-namespace GermanTrainer.Data;
+namespace GermanTrainer.Infrastructure.Data;
 
 /// <summary>
-/// Additive bridge for installations originally created with EnsureCreated (no migration baseline).
-/// Does not alter/drop the old three tables. Runs transactionally, under an application lock.
+/// Additive bridge for installations originally created with EnsureCreated (no migration baseline)
+/// Does not alter/drop the old three tables. Runs transactionally, under an application lock
 /// </summary>
 public static class DatabaseUpgrade
 {
@@ -65,9 +66,17 @@ public static class DatabaseUpgrade
         if (version == null)
         {
             VerbPrepositionSeeds.AddMissing(db);
-            db.SchemaVersions.Add(new SchemaVersion { Id = 1, Version = 3, AppliedUtc = DateTime.UtcNow });
+            version = new SchemaVersion { Id = 1, Version = 3, AppliedUtc = DateTime.UtcNow };
+            db.SchemaVersions.Add(version);
         }
         else if (version.Version < 3) { version.Version = 3; version.AppliedUtc = DateTime.UtcNow; }
+        if (version.Version < 4)
+        {
+            CourseVocabularySeeds.Apply(db);
+            VerbPrepositionSeeds.AddCourseExpansion(db);
+            version.Version = 4;
+            version.AppliedUtc = DateTime.UtcNow;
+        }
         db.SaveChanges();
         transaction.Commit();
     }

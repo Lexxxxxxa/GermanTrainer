@@ -1,76 +1,75 @@
-using GermanTrainer.ViewModels.Base;
+using GermanTrainer.Wpf.ViewModels.Base;
 
-namespace GermanTrainer.ViewModels
+namespace GermanTrainer.Wpf.ViewModels;
+
+///<summary> 
+///der/die/das button 
+///</summary>
+public class ArticleOptionViewModel : ViewModelBase
 {
-    ///<summary> 
-    ///der/die/das button 
-    ///</summary>
-    public class ArticleOptionViewModel : ViewModelBase
+    private bool _isSelected;
+
+    public ArticleOptionViewModel(string article)
     {
-        private bool _isSelected;
-
-        public ArticleOptionViewModel(string article)
-        {
-            Article = article;
-        }
-
-        public string Article { get; }
-
-        public bool IsSelected
-        {
-            get => _isSelected;
-            set => SetProperty(ref _isSelected, value);
-        }
+        Article = article;
     }
 
-    ///<summary>
-    ///Answer option in the translation trainer
-    ///</summary>
-    public class AnswerOptionViewModel : ViewModelBase
+    public string Article { get; }
+
+    public bool IsSelected
     {
-        private bool _isSelected;
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
+    }
+}
 
-        public AnswerOptionViewModel(string text)
-        {
-            Text = text;
-        }
+///<summary>
+///Answer option in the translation trainer
+///</summary>
+public class AnswerOptionViewModel : ViewModelBase
+{
+    private bool _isSelected;
 
-        public string Text { get; }
-
-        public bool IsSelected
-        {
-            get => _isSelected;
-            set => SetProperty(ref _isSelected, value);
-        }
+    public AnswerOptionViewModel(string text)
+    {
+        Text = text;
     }
 
-    ///<summary>
-    ///Checkable item (word type or lesson on the settings page)
-    ///</summary>
-    public class CheckableItemViewModel<T> : ViewModelBase
+    public string Text { get; }
+
+    public bool IsSelected
     {
-        private bool _isChecked;
-        private string _label;
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
+    }
+}
 
-        public CheckableItemViewModel(T value, string label, bool isChecked)
-        {
-            Value = value;
-            _label = label;
-            _isChecked = isChecked;
-        }
+///<summary>
+///Checkable item (word type or lesson on the settings page)
+///</summary>
+public class CheckableItemViewModel<T> : ViewModelBase
+{
+    private bool _isChecked;
+    private string _label;
 
-        public T Value { get; }
+    public CheckableItemViewModel(T value, string label, bool isChecked)
+    {
+        Value = value;
+        _label = label;
+        _isChecked = isChecked;
+    }
 
-        public string Label
-        {
-            get => _label;
-            set => SetProperty(ref _label, value);
-        }
+    public T Value { get; }
 
-        public bool IsChecked
-        {
-            get => _isChecked;
-            set => SetProperty(ref _isChecked, value);
-        }
+    public string Label
+    {
+        get => _label;
+        set => SetProperty(ref _label, value);
+    }
+
+    public bool IsChecked
+    {
+        get => _isChecked;
+        set => SetProperty(ref _isChecked, value);
     }
 }

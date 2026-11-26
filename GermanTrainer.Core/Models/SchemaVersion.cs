@@ -1,4 +1,4 @@
-namespace GermanTrainer.Models;
+namespace GermanTrainer.Core.Models;
 
 /// <summary>
 /// Internal database upgrade marker, not a product/release version

@@ -1,6 +1,6 @@
 using System.Windows.Input;
 
-namespace GermanTrainer.ViewModels.Base;
+namespace GermanTrainer.Wpf.ViewModels.Base;
 
 /// <summary>
 /// Non-reentrant async command; exceptions are routed to the supplied error handler

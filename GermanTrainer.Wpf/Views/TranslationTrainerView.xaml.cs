@@ -1,16 +1,15 @@
-﻿using System.Windows.Controls;
+using System.Windows.Controls;
 
 
-namespace GermanTrainer.Views
+namespace GermanTrainer.Wpf.Views;
+
+/// <summary>
+/// Interaction logic for TranslationTrainerView.xaml
+/// </summary>
+public partial class TranslationTrainerView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for TranslationTrainerView.xaml
-    /// </summary>
-    public partial class TranslationTrainerView : UserControl
+    public TranslationTrainerView()
     {
-        public TranslationTrainerView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

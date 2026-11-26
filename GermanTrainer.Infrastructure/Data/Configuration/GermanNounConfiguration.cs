@@ -1,36 +1,23 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using GermanTrainer.Models;
+using GermanTrainer.Core.Models;
 
-namespace GermanTrainer.Data.Configuration
+namespace GermanTrainer.Infrastructure.Data.Configuration;
+
+partial class GermanNounConfiguration : IEntityTypeConfiguration<GermanNoun>
 {
-    partial class GermanNounConfiguration : IEntityTypeConfiguration<GermanNoun>
+    public void Configure(EntityTypeBuilder<GermanNoun> builder)
     {
-        public void Configure(EntityTypeBuilder<GermanNoun> builder)
-        {
-            builder.HasKey(x => x.Id);
-            builder.Property(x => x.Word).IsRequired().HasMaxLength(50);
-            builder.Property(x => x.Article).IsRequired().HasMaxLength(10);
-            builder.Property(x => x.Translation).IsRequired().HasMaxLength(200);
-            builder.Property(x => x.PluralForm).HasMaxLength(50);
-            builder.Property(x => x.Level).IsRequired().HasMaxLength(3);
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Word).IsRequired().HasMaxLength(50);
+        builder.Property(x => x.Article).IsRequired().HasMaxLength(10);
+        builder.Property(x => x.Translation).IsRequired().HasMaxLength(200);
+        builder.Property(x => x.PluralForm).HasMaxLength(50);
+        builder.Property(x => x.Level).IsRequired().HasMaxLength(3);
 
-            builder.HasData(GetGermanNounBatch1());
-            builder.HasData(GetGermanNounBatch2());
-            builder.HasData(GetGermanNounBatch3());
-            builder.HasData(GetGermanNounBatch4());
-            builder.HasData(GetGermanNounBatch5());
-            builder.HasData(GetGermanNounBatch6());
-            builder.HasData(GetGermanNounBatch7());
-            builder.HasData(GetGermanNounBatch8());
-            builder.HasData(GetGermanNounBatch9());
-            builder.HasData(GetGermanNounBatch10());
-            builder.HasData(GetGermanNounBatch11());
-            builder.HasData(GetGermanNounBatch12());
-            builder.HasData(GetGermanNounBatch13());
-            builder.HasData(GetGermanNounBatch14());
-            builder.HasData(GetGermanNounBatch15());
+        builder.HasData(GetGermanNounA1Seeds());
+        builder.HasData(GetGermanNounA2Seeds());
+        builder.HasData(GetGermanNounB1Seeds());
 
-        }
     }
 }

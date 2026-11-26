@@ -1,15 +1,11 @@
-using GermanTrainer.Models;
+using GermanTrainer.Core.Models;
 
-namespace GermanTrainer.Services;
+namespace GermanTrainer.Core.Services;
 
 public interface IWordsService
 {
     void EnsureDatabaseCreated();
-    List<int> GetAllLessons();
-    Dictionary<int, int> GetVisibleWordCountByLesson();
     List<WordEntry> GetWords(WordType type, IReadOnlyCollection<int>? lessons = null);
-    bool? ToggleHidden(WordType type, int id);
-    bool DeleteWord(WordType type, int id);
 }
 
 public interface IArticlesTrainingService

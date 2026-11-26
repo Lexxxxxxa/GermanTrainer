@@ -1,15 +1,14 @@
 using System.Windows.Controls;
 
-namespace GermanTrainer.Views
+namespace GermanTrainer.Wpf.Views;
+
+/// <summary>
+/// Interaction logic for SettingsView.xaml
+/// </summary>
+public partial class SettingsView : UserControl
 {
-    /// <summary>
-    /// Interaction logic for SettingsView.xaml
-    /// </summary>
-    public partial class SettingsView : UserControl
+    public SettingsView()
     {
-        public SettingsView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

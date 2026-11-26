@@ -1,15 +1,15 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-using GermanTrainer.Models;
-using GermanTrainer.Services;
-using GermanTrainer.ViewModels.Base;
+using GermanTrainer.Core.Models;
+using GermanTrainer.Core.Services;
+using GermanTrainer.Wpf.Services;
+using GermanTrainer.Wpf.ViewModels.Base;
 
-namespace GermanTrainer.ViewModels;
+namespace GermanTrainer.Wpf.ViewModels;
 
 public class TrainerPrepositionsViewModel : ViewModelBase, ITrainerViewModel
 {
     private readonly IPrepositionsTrainingService _service;
-    private readonly IWordsService _words;
     private readonly IDialogService _dialogs;
     private readonly SessionScore _score = new();
     private VerbPreposition? _current;
@@ -18,9 +18,9 @@ public class TrainerPrepositionsViewModel : ViewModelBase, ITrainerViewModel
     private bool _answered;
     private string? _feedback;
 
-    public TrainerPrepositionsViewModel(IPrepositionsTrainingService service, IWordsService words, IDialogService dialogs)
+    public TrainerPrepositionsViewModel(IPrepositionsTrainingService service, IDialogService dialogs)
     {
-        _service = service; _words = words; _dialogs = dialogs;
+        _service = service; _dialogs = dialogs;
         PrepositionOptions = new(VocabularyValidation.Prepositions
             .Select(p => new AnswerOptionViewModel(p)));
         CaseOptions = new(Enum.GetValues<GrammaticalCase>().Select(c => new AnswerOptionViewModel(c.ToString())));
@@ -29,7 +29,6 @@ public class TrainerPrepositionsViewModel : ViewModelBase, ITrainerViewModel
         CheckOrNextCommand = new RelayCommand(CheckOrNext, () => IsAnswered ||
             (_current != null && _selectedPreposition != null && _selectedCase.HasValue));
         ResetStatisticsCommand = new RelayCommand(ResetStatistics);
-        ManageWordsCommand = new RelayCommand(OpenWordsManagement);
         Refresh();
     }
 
@@ -54,7 +53,6 @@ public class TrainerPrepositionsViewModel : ViewModelBase, ITrainerViewModel
     public ICommand SelectCaseCommand { get; }
     public ICommand CheckOrNextCommand { get; }
     public ICommand ResetStatisticsCommand { get; }
-    public ICommand ManageWordsCommand { get; }
 
     private void SelectPreposition(AnswerOptionViewModel? option)
     {
@@ -97,8 +95,6 @@ public class TrainerPrepositionsViewModel : ViewModelBase, ITrainerViewModel
         OnPropertyChanged(nameof(Meaning));
         CommandManager.InvalidateRequerySuggested();
     }
-    public void OpenWordsManagement() => _dialogs.ShowWordsManagement(
-        new WordsManagementViewModel(WordsManagementMode.VerbPrepositions, _words, Refresh));
     private void ResetStatistics()
     {
         if (!_dialogs.Confirm("Сбросить счётчики текущей сессии глаголов с предлогами?\nИстория обучения сохранится.", "Сброс статистики")) return;

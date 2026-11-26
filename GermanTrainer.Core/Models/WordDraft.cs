@@ -1,4 +1,4 @@
-namespace GermanTrainer.Models;
+namespace GermanTrainer.Core.Models;
 
 public class WordDraft
 {
@@ -11,6 +11,9 @@ public class WordDraft
     public string? PluralForm { get; set; }
     public string Level { get; set; } = "";
     public bool IsHidden { get; set; }
+    public int CorrectAnswers { get; set; }
+    public int WrongAnswers { get; set; }
+    public string TypeLabel => Type.ToDisplayName();
     public List<ConstructionDraft> Constructions { get; set; } = new();
 }
 

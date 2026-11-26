@@ -1,5 +1,5 @@
-using GermanTrainer.Models;
-using GermanTrainer.Services;
+using GermanTrainer.Core.Models;
+using GermanTrainer.Core.Services;
 
 namespace GermanTrainer.Tests;
 

@@ -1,9 +1,11 @@
 using System.Windows;
-using GermanTrainer.Models;
-using GermanTrainer.Services;
-using GermanTrainer.ViewModels;
-using GermanTrainer.ViewModels.Base;
-using GermanTrainer.Views;
+using GermanTrainer.Core.Models;
+using GermanTrainer.Core.Services;
+using GermanTrainer.Wpf;
+using GermanTrainer.Wpf.Views;
+using GermanTrainer.Wpf.ViewModels;
+using GermanTrainer.Wpf.ViewModels.Base;
+using GermanTrainer.Wpf.Services;
 
 namespace GermanTrainer.Wpf.Tests;
 
@@ -26,7 +28,7 @@ public sealed class ViewModelTests
     public void TranslationSwitchSeparatesScoresAndResetLeavesHistory()
     {
         var fake = new FakeServices();
-        var page = new TrainerTranslationViewModel(fake, fake, fake);
+        var page = new TrainerTranslationViewModel(fake, fake);
         page.SelectAnswer(page.AnswerOptions[0]); page.CheckAnswer(); page.CheckAnswer();
         Assert.Equal(1, fake.Recorded);
         Assert.Equal(1, page.CorrectCount);
@@ -44,7 +46,7 @@ public sealed class ViewModelTests
     public void ArticleResetDoesNotRecordOrAdvanceQuestion()
     {
         var fake = new FakeServices();
-        var page = new TrainerArticlesViewModel(fake, fake, fake);
+        var page = new TrainerArticlesViewModel(fake, fake);
         page.SelectArticle("der"); page.CheckAnswer(); page.CheckAnswer();
         page.ResetStatisticsCommand.Execute(null);
         Assert.Equal(0, page.CorrectCount);
@@ -55,7 +57,7 @@ public sealed class ViewModelTests
     public void PrepositionsRequireBothSelectionsAndResetIsSessionOnly()
     {
         var fake = new FakeServices();
-        var page = new TrainerPrepositionsViewModel(fake, fake, fake);
+        var page = new TrainerPrepositionsViewModel(fake, fake);
         Assert.False(page.CheckOrNextCommand.CanExecute(null));
         page.SelectPrepositionCommand.Execute(page.PrepositionOptions.Single(p => p.Text == "auf"));
         Assert.False(page.CheckOrNextCommand.CanExecute(null));
@@ -71,7 +73,7 @@ public sealed class ViewModelTests
     public void CanceledResetKeepsScore()
     {
         var fake = new FakeServices { Confirmed = false };
-        var page = new TrainerArticlesViewModel(fake, fake, fake);
+        var page = new TrainerArticlesViewModel(fake, fake);
         page.SelectArticle("der"); page.CheckAnswer();
         page.ResetStatisticsCommand.Execute(null);
         Assert.Equal(1, page.CorrectCount);
@@ -80,7 +82,7 @@ public sealed class ViewModelTests
     public void FailedSaveDoesNotCountAnswer()
     {
         var fake = new FakeServices { FailRecord = true };
-        var page = new TrainerTranslationViewModel(fake, fake, fake);
+        var page = new TrainerTranslationViewModel(fake, fake);
         page.SelectAnswer(page.AnswerOptions[0]);
         Assert.Throws<InvalidOperationException>(page.CheckAnswer);
         Assert.False(page.IsAnswered);
@@ -113,9 +115,9 @@ public sealed class ViewModelTests
                 object[] pages =
                 [
                     new MenuView { DataContext = main.CurrentPage },
-                new ArticlesTrainerView { DataContext = new TrainerArticlesViewModel(fake, fake, fake) },
-                new TranslationTrainerView { DataContext = new TrainerTranslationViewModel(fake, fake, fake) },
-                new PrepositionsTrainerView { DataContext = new TrainerPrepositionsViewModel(fake, fake, fake) },
+                new ArticlesTrainerView { DataContext = new TrainerArticlesViewModel(fake, fake) },
+                new TranslationTrainerView { DataContext = new TrainerTranslationViewModel(fake, fake) },
+                new PrepositionsTrainerView { DataContext = new TrainerPrepositionsViewModel(fake, fake) },
                 new SettingsView { DataContext = new SettingsViewModel(fake, fake, () => { }, () => { }) },
                 new VocabularyView { DataContext = new VocabularyViewModel(fake, fake, () => { }) }
                 ];
@@ -182,7 +184,6 @@ public sealed class ViewModelTests
     public void ShowInfo(string message, string title) { }
     public void ShowWarning(string message, string title) { }
     public bool Confirm(string message, string title) => Confirmed;
-    public void ShowWordsManagement(WordsManagementViewModel viewModel) { }
     public IReadOnlyList<WordDraft> GetAll() => [];
     public void Save(WordDraft draft) => draft.Id = 1;
     public void Delete(WordType type, int id) { }

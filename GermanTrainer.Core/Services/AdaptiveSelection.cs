@@ -1,6 +1,6 @@
-using GermanTrainer.Models;
+using GermanTrainer.Core.Models;
 
-namespace GermanTrainer.Services;
+namespace GermanTrainer.Core.Services;
 
 /// <summary>
 /// Pure, deterministic-given-Random logic shared by all training modes

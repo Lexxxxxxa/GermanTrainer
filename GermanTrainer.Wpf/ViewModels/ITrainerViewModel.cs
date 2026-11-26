@@ -1,8 +1,6 @@
-﻿namespace GermanTrainer.ViewModels
+namespace GermanTrainer.Wpf.ViewModels;
+
+public interface ITrainerViewModel
 {
-    public interface ITrainerViewModel
-    {
-        void Refresh();
-        void OpenWordsManagement();
-    }
+    void Refresh();
 }

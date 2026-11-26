@@ -1,12 +1,11 @@
-﻿using System.Windows.Controls;
+using System.Windows.Controls;
 
-namespace GermanTrainer.Views
+namespace GermanTrainer.Wpf.Views;
+
+public partial class MenuView : UserControl
 {
-    public partial class MenuView : UserControl
+    public MenuView()
     {
-        public MenuView()
-        {
-            InitializeComponent();
-        }
+        InitializeComponent();
     }
 }

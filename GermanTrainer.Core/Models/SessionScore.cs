@@ -1,4 +1,4 @@
-namespace GermanTrainer.Models;
+namespace GermanTrainer.Core.Models;
 
 /// <summary>
 /// In-memory only; reset deliberately leaves persistent history untouched

@@ -1,4 +1,4 @@
-namespace GermanTrainer.Models;
+namespace GermanTrainer.Core.Models;
 
 public enum GrammaticalCase { Akkusativ, Dativ }
 

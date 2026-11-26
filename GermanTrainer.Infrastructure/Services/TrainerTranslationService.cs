@@ -1,8 +1,10 @@
-using GermanTrainer.Data;
-using GermanTrainer.Models;
 using Microsoft.EntityFrameworkCore;
+using GermanTrainer.Core.Models;
+using GermanTrainer.Core.Services;
+using GermanTrainer.Infrastructure.Data;
+using GermanTrainer.Infrastructure.Common;
 
-namespace GermanTrainer.Services;
+namespace GermanTrainer.Infrastructure.Services;
 
 public class TrainerTranslationService : ITranslationTrainingService
 {
@@ -36,7 +38,7 @@ public class TrainerTranslationService : ITranslationTrainingService
     public void RecordAnswer(TranslationWord word, bool reverse, bool correct)
     {
         var mode = reverse ? TrainingMode.RussianToGerman : TrainingMode.GermanToRussian;
-        // Old aggregate counters remain available in Settings; mode-specific history is separate.
+
         using var db = _factory.Create();
         var parts = word.Key.Split(':');
         var id = int.Parse(parts[1]);
@@ -62,20 +64,19 @@ public class TrainerTranslationService : ITranslationTrainingService
     public void ReloadWords()
     {
         using var db = _factory.Create();
-        var lessons = AppSettings.EnabledLessons.ToList();
         _words = new();
         if (AppSettings.IsWordTypeEnabled(WordType.Noun))
             _words.AddRange(db.GermanNouns.AsNoTracking()
-                .Where(w => !w.IsHidden && (lessons.Count == 0 || lessons.Contains(w.Lesson))).ToList()
+                .Where(w => !w.IsHidden).ToList().Where(w => AppSettings.IsModuleEnabled(w.Level, w.Lesson))
                 .Select(w => new TranslationWord($"Noun:{w.Id}",
                     string.IsNullOrWhiteSpace(w.Article) ? w.Word : $"{w.Article} {w.Word}", w.Translation)));
         if (AppSettings.IsWordTypeEnabled(WordType.Verb))
             _words.AddRange(db.GermanVerbs.AsNoTracking()
-                .Where(w => !w.IsHidden && (lessons.Count == 0 || lessons.Contains(w.Lesson))).ToList()
+                .Where(w => !w.IsHidden).ToList().Where(w => AppSettings.IsModuleEnabled(w.Level, w.Lesson))
                 .Select(w => new TranslationWord($"Verb:{w.Id}", w.Word, w.Translation)));
         if (AppSettings.IsWordTypeEnabled(WordType.Adjective))
             _words.AddRange(db.GermanAdjectives.AsNoTracking()
-                .Where(w => !w.IsHidden && (lessons.Count == 0 || lessons.Contains(w.Lesson))).ToList()
+                .Where(w => !w.IsHidden).ToList().Where(w => AppSettings.IsModuleEnabled(w.Level, w.Lesson))
                 .Select(w => new TranslationWord($"Adjective:{w.Id}", w.Word, w.Translation)));
         _words = _words.Where(w => !string.IsNullOrWhiteSpace(w.German) &&
             !string.IsNullOrWhiteSpace(w.Russian)).ToList();
